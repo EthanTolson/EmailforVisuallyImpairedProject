@@ -3,6 +3,7 @@ import math
 import constants
 import mailing.mailing
 import time
+import voice.voice
 
 
 class Window():
@@ -13,6 +14,7 @@ class Window():
         self.window.state('zoomed')
         self.window.geometry("1000x500")
         self.window.protocol("WM_DELETE_WINDOW", self.exit)
+        self.voice = voice.voice.VoiceControl()
 
     def exit(self):
         # What happens when window is closed
@@ -73,6 +75,15 @@ class Window():
         self.body_label = tk.Label(text = "Body: ")
         self.error_label = tk.Label(text = "")
 
+
+        """TESTING PURPOSES REMOVE"""
+        self.speech_button = tk.Button(text = "Speech to Text (Body) (10 secs)", command = lambda: self.get_text_from_speech(10))
+        self.speech_button.grid(column = 1, row = 8)
+
+
+        """TESTING PURPOSES REMOVE"""
+
+
         self.email_one = tk.Button(text = "REFRESH EMAILS", command = self.get_recieved_emails)
         self.email_two = tk.Button(text = "REFRESH EMAILS", command = self.get_recieved_emails)
         self.email_three = tk.Button(text = "REFRESH EMAILS", command = self.get_recieved_emails)
@@ -99,6 +110,9 @@ class Window():
         self.error_label.grid(column = 1, row = 2)
 
         self.get_recieved_emails()
+
+    def get_text_from_speech(self, length):
+        self.body.config(text = self.voice.speech_to_text(length))
 
     def get_recieved_emails(self):
         if self.mail.get_emails():
