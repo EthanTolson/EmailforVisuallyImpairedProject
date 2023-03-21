@@ -27,16 +27,14 @@ class VoiceControl:
                 text = r.recognize_google(audio_data)
             return text
         except:
-            print("Something went Wrong with speech to text.")
-            return ""
+            self.text_to_speech("Something went wrong with speech to text.")
+            return "Something went wrong with speech to text."
 
     def record_audio(self, length):
         fs = 44100  # Sample rate
         seconds = length  # Duration of recording
-        print("______________Recording Beginning_____________________")
         myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=1, dtype = np.int16)
         sd.wait()  # Wait until recording is finished
-        print("______________Recording Finished______________________")
         write(self.speech_filename, fs, myrecording.astype(np.int16))
 
     def delete_audio_file(self, type):

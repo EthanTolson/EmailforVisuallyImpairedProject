@@ -61,6 +61,7 @@ class Mailing:
         Gets the last 5 emails sent to the User Email Address adn save them to class
         """
         try:
+            self.messages = []
             connection = imaplib.IMAP4_SSL(self.imap_url)
             connection.login(self.user, self.password)
             connection.select("Inbox")
@@ -72,7 +73,7 @@ class Mailing:
             else:
                 stop_index = 5
 
-            for i in range(int(mail_id_list[-1]), int(mail_id_list[-stop_index + 1]) - 1, -1):
+            for i in range(int(mail_id_list[-1]), int(mail_id_list[-stop_index]) - 1, -1):
                 typ, data = connection.fetch(str(i),'(RFC822)')
                 for response_part in data:
                     if isinstance(response_part, tuple):
@@ -80,12 +81,8 @@ class Mailing:
                         for part in msg.walk():
                             if part.get_content_type() == 'text/plain':
                                 self.messages.append({"from" : msg['from'], "subj" : msg['subject'], "body" : part.get_payload()})
-                                # print(msg)
-                                # print("subj:", msg['subject'])
-                                # print("from:", msg['from'])
-                                # print("body:")
-                                # print(part.get_payload())
-            self.messages_length = len(self.messages)
+                               
+            self.messages_length = stop_index
             return True
         except:
             return False
