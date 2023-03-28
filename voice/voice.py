@@ -45,7 +45,6 @@ class VoiceControl:
             if path.exists(self.speech_filename):
                 remove(self.speech_filename)
 
-
     def text_to_speech(self, text):
         """
         Gets an mp3 file from googles tts plays it then deletes it

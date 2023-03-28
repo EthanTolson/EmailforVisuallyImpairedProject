@@ -6,7 +6,6 @@ from email import encoders, message_from_bytes
 import ssl
 import imaplib
 
-
 class Mailing:
     def __init__(self, username, password):
         self.context = ssl.create_default_context()
