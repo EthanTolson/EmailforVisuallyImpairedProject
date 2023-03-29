@@ -5,7 +5,6 @@ from os import system
 import mailing.mailing
 import time
 import voice.voice
-import threading as t
 
 class Window():
     def __init__(self):
