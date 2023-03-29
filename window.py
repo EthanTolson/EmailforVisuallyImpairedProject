@@ -51,6 +51,8 @@ class Window():
         self.label5.grid(row = 2, column = 3, padx = 10, pady = 10)
         self.loginbutton.grid(row = 4, column = 1, columnspan = 2, padx = 10, pady = 10)
         self.voice_control_button.grid(row = 5, column = 1, columnspan = 2, padx = 10, pady = 10) 
+        self.window.update()
+        self.prompt_voice_control()
 
     def prompt_voice_control(self):
         """
