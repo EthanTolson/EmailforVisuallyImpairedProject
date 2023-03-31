@@ -79,9 +79,8 @@ class Mailing:
                         msg = message_from_bytes(response_part[1])
                         for part in msg.walk():
                             if part.get_content_type() == 'text/plain':
-                                self.messages.append({"from" : msg['from'], "subj" : msg['subject'], "body" : part.get_payload()})
-                               
-            self.messages_length = stop_index
+                                self.messages.append({"from" : msg['from'], "subj" : msg['subject'], "body" : part.get_payload()})   
+            self.messages_length = len(self.messages)
             return True
         except:
             return False

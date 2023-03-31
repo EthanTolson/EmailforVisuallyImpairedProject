@@ -1,10 +1,10 @@
 import tkinter as tk
 import math
-from constants import FILEPATH, NUMBER_WORDS, NUMBER_WORDS_CHANGE
+from constants import FILEPATH, NUMBER_WORDS_CHANGE
 from os import system
-import mailing.mailing
+import mailing.mailing as mailing
 import time
-import voice.voice
+import voice.voice as voice
 
 class Window():
     def __init__(self):
@@ -14,7 +14,7 @@ class Window():
         self.window.state('zoomed')
         self.window.geometry("1000x500")
         self.window.protocol("WM_DELETE_WINDOW", self.exit)
-        self.voice = voice.voice.VoiceControl()
+        self.voice = voice.VoiceControl()
         self.vc = False
 
     def exit(self):
@@ -38,7 +38,7 @@ class Window():
         self.password = tk.Entry()
 
         self.label4 = tk.Label(text = "Application Password: ")
-        self.label5 = tk.Label(text = "Here is a link to find the application password: PLACEHOLDER")
+        self.label5 = tk.Label(text = "Here is a link to find the application password: https://support.google.com/mail/answer/185833?hl=en")
 
         self.label3 = tk.Label(text = "")
 
@@ -128,14 +128,15 @@ class Window():
             self.bad_login_prompt()
             self.label3.config(text = "Please enter a valid Gmail Email Address")
 
-        self.mail = mailing.mailing.Mailing(self.user.get(), self.password.get())
+        self.mail = mailing.Mailing(self.user.get(), self.password.get())
 
         if not self.mail.try_login():
             self.bad_login_prompt()
             self.label3.config(text = "Please enter a valid Gmail Email Address/Check to make sure you are using the correct password")
         else:
             self.label3.config(text = "Success")
-            system(f"{FILEPATH}prompts/login_success_prompt.wav")
+            if self.vc:
+                system(f"{FILEPATH}prompts/login_success_prompt.wav")
             time.sleep(.5)
             self.email_interface()
 
@@ -202,28 +203,28 @@ class Window():
         """
         if self.mail.get_emails():
             if self.mail.messages_length == 1:
-                self.email_one.config(text = self.mail.messages[0]["from"] + "\n" + self.mail.messages[0]["subj"], command = lambda: self.display_email(0))
+                self.email_one.config(text = self.mail.messages[0]["from"][0:14] + "\n" + self.mail.messages[0]["subj"][0:14], command = lambda: self.display_email(0))
                 self.email_two.config(text = "")
                 self.email_three.config(text = "")
                 self.email_four.config(text = "")
                 self.email_five.config(text = "")
             elif self.mail.messages_length == 2:
-                self.email_one.config(text = self.mail.messages[0]["from"] + "\n" + self.mail.messages[0]["subj"], command = lambda: self.display_email(0))
-                self.email_two.config(text = self.mail.messages[1]["from"] + "\n" + self.mail.messages[1]["subj"], command = lambda: self.display_email(1))
+                self.email_one.config(text = self.mail.messages[0]["from"][0:14] + "\n" + self.mail.messages[0]["subj"][0:14], command = lambda: self.display_email(0))
+                self.email_two.config(text = self.mail.messages[1]["from"][0:14] + "\n" + self.mail.messages[1]["subj"][0:14], command = lambda: self.display_email(1))
                 self.email_three.config(text = "")
                 self.email_four.config(text = "")
                 self.email_five.config(text = "")
             elif self.mail.messages_length == 3:
-                self.email_one.config(text = self.mail.messages[0]["from"] + "\n" + self.mail.messages[0]["subj"], command = lambda: self.display_email(0))
-                self.email_two.config(text = self.mail.messages[1]["from"] + "\n" + self.mail.messages[1]["subj"], command = lambda: self.display_email(1))
-                self.email_three.config(text = self.mail.messages[2]["from"] + "\n" + self.mail.messages[2]["subj"], command = lambda: self.display_email(2))
+                self.email_one.config(text = self.mail.messages[0]["from"][0:14] + "\n" + self.mail.messages[0]["subj"][0:14], command = lambda: self.display_email(0))
+                self.email_two.config(text = self.mail.messages[1]["from"][0:14] + "\n" + self.mail.messages[1]["subj"][0:14], command = lambda: self.display_email(1))
+                self.email_three.config(text = self.mail.messages[2]["from"][0:14] + "\n" + self.mail.messages[2]["subj"][0:14], command = lambda: self.display_email(2))
                 self.email_four.config(text = "")
                 self.email_five.config(text = "")
             elif self.mail.messages_length == 4:
-                self.email_one.config(text = self.mail.messages[0]["from"] + "\n" + self.mail.messages[0]["subj"], command = lambda: self.display_email(0))
-                self.email_two.config(text = self.mail.messages[1]["from"] + "\n" + self.mail.messages[1]["subj"], command = lambda: self.display_email(1))
-                self.email_three.config(text = self.mail.messages[2]["from"] + "\n" + self.mail.messages[2]["subj"], command = lambda: self.display_email(2))
-                self.email_four.config(text = self.mail.messages[3]["from"] + "\n" + self.mail.messages[3]["subj"], command = lambda: self.display_email(3))
+                self.email_one.config(text = self.mail.messages[0]["from"][0:14] + "\n" + self.mail.messages[0]["subj"][0:14], command = lambda: self.display_email(0))
+                self.email_two.config(text = self.mail.messages[1]["from"][0:14] + "\n" + self.mail.messages[1]["subj"][0:14], command = lambda: self.display_email(1))
+                self.email_three.config(text = self.mail.messages[2]["from"][0:14] + "\n" + self.mail.messages[2]["subj"][0:14], command = lambda: self.display_email(2))
+                self.email_four.config(text = self.mail.messages[3]["from"][0:14] + "\n" + self.mail.messages[3]["subj"][0:14], command = lambda: self.display_email(3))
                 self.email_five.config(text = "")
             elif self.mail.messages_length == 0:
                 self.email_one.config(text = "No Emails in Inbox")
@@ -232,11 +233,11 @@ class Window():
                 self.email_four.config(text = "No Emails in Inbox")
                 self.email_five.config(text = "No Emails in Inbox")
             else:
-                self.email_one.config(text = self.mail.messages[0]["from"] + "\n" + self.mail.messages[0]["subj"], command = lambda: self.display_email(0))
-                self.email_two.config(text = self.mail.messages[1]["from"] + "\n" + self.mail.messages[1]["subj"], command = lambda: self.display_email(1))
-                self.email_three.config(text = self.mail.messages[2]["from"] + "\n" + self.mail.messages[2]["subj"], command = lambda: self.display_email(2))
-                self.email_four.config(text = self.mail.messages[3]["from"] + "\n" + self.mail.messages[3]["subj"], command = lambda: self.display_email(3))
-                self.email_five.config(text = self.mail.messages[4]["from"] + "\n" + self.mail.messages[4]["subj"], command = lambda: self.display_email(4))
+                self.email_one.config(text = self.mail.messages[0]["from"][0:14] + "\n" + self.mail.messages[0]["subj"][0:14], command = lambda: self.display_email(0))
+                self.email_two.config(text = self.mail.messages[1]["from"][0:14] + "\n" + self.mail.messages[1]["subj"][0:14], command = lambda: self.display_email(1))
+                self.email_three.config(text = self.mail.messages[2]["from"][0:14] + "\n" + self.mail.messages[2]["subj"][0:14], command = lambda: self.display_email(2))
+                self.email_four.config(text = self.mail.messages[3]["from"][0:14] + "\n" + self.mail.messages[3]["subj"][0:14], command = lambda: self.display_email(3))
+                self.email_five.config(text = self.mail.messages[4]["from"][0:14] + "\n" + self.mail.messages[4]["subj"][0:14], command = lambda: self.display_email(4))
             self.error_label.config(text = "Emails Received")
         else:
             self.error_label.config(text = "There was an issue retrieving from your inbox.")
@@ -245,6 +246,8 @@ class Window():
         """"
         Displays the email that the user selects
         """
+        self.reset_button_colors()
+
         self.body.delete("1.0", tk.END)
         self.user_from.config(text = self.mail.messages[index]['from'])
         self.user_to.delete(0, tk.END)
@@ -263,6 +266,13 @@ class Window():
             self.email_four.config(background = "#b4c0d6")
         elif index == 4:
             self.email_five.config(background = "#b4c0d6")
+
+    def reset_button_colors(self):
+        self.email_one.config(background = "#3474eb")
+        self.email_two.config(background = "#3474eb")
+        self.email_three.config(background = "#3474eb")
+        self.email_four.config(background = "#3474eb")
+        self.email_five.config(background = "#3474eb")
 
     def send_email(self):
         """
