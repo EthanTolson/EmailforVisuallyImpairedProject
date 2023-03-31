@@ -1,6 +1,7 @@
 from gtts import gTTS
 from constants import FILEPATH
-from os import system, path, remove
+from os import path, remove
+from playsound import playsound
 import speech_recognition as sr
 import sounddevice as sd
 from scipy.io.wavfile import write
@@ -12,12 +13,18 @@ class VoiceControl:
         self.text_filename = f"{FILEPATH}temp.mp3"
 
     def speech_to_text(self, length):
+        """
+        Gets voice recording and converts to text
+        """
         self.record_audio(length)
         text = self.to_text()
         self.delete_audio_file("wav")
         return text
     
     def to_text(self):
+        """
+        Attempts to convert audio file to text fails if there are no words in recording or if recording is too long
+        """
         try:
             r = sr.Recognizer()
             with sr.AudioFile(self.speech_filename) as source:
@@ -31,6 +38,9 @@ class VoiceControl:
             return "Something went wrong with speech to text."
 
     def record_audio(self, length):
+        """
+        records audio for specified duration
+        """
         fs = 44100  # Sample rate
         seconds = length  # Duration of recording
         myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=1, dtype = np.int16)
@@ -38,6 +48,9 @@ class VoiceControl:
         write(self.speech_filename, fs, myrecording.astype(np.int16))
 
     def delete_audio_file(self, type):
+        """
+        removes temp files for speech to text and text to speech
+        """
         if type =="tts":
             if path.exists(self.text_filename):
                 remove(self.text_filename)
@@ -51,5 +64,5 @@ class VoiceControl:
         """
         tts = gTTS(text)
         tts.save(self.text_filename)
-        system(self.text_filename)
+        playsound(self.text_filename)
         self.delete_audio_file("tts")

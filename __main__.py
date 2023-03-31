@@ -1,4 +1,3 @@
-import constants
 import window as win
 
 def main():

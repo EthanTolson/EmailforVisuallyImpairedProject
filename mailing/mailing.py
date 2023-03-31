@@ -16,6 +16,9 @@ class Mailing:
         self.messages = []
 
     def create_message(self, user_to, subject, body):
+        """
+        Creates MIME message and sets self.message to it
+        """
         self.message = MIMEMultipart()
         self.message['From'] = self.user
         self.message['To'] = user_to
@@ -35,6 +38,9 @@ class Mailing:
             return False
 
     def attach_file(self):
+        """
+        Not currently working DO NOT USE
+        """
         # Attach a file (optional)
         filename = "example.txt"
         attachment = open(filename, "rb")
@@ -57,7 +63,7 @@ class Mailing:
 
     def get_emails(self):
         """
-        Gets the last 5 emails sent to the User Email Address adn save them to class
+        Gets the last 5 emails sent to the User Email Address and save them to class
         """
         try:
             self.messages = []
@@ -77,9 +83,16 @@ class Mailing:
                 for response_part in data:
                     if isinstance(response_part, tuple):
                         msg = message_from_bytes(response_part[1])
+                        check = 0
+                        check_against = 0
                         for part in msg.walk():
                             if part.get_content_type() == 'text/plain':
-                                self.messages.append({"from" : msg['from'], "subj" : msg['subject'], "body" : part.get_payload()})   
+                                self.messages.append({"from" : msg['from'], "subj" : msg['subject'], "body" : part.get_payload()})
+                            else:
+                                check_against += 1
+                            check += 1
+                        if check == check_against:
+                            print("Some Emails did not contain text.")
             self.messages_length = len(self.messages)
             return True
         except:

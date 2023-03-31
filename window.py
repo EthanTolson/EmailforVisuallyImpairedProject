@@ -1,10 +1,11 @@
 import tkinter as tk
 import math
 from constants import FILEPATH, NUMBER_WORDS_CHANGE
-from os import system
 import mailing.mailing as mailing
 import time
 import voice.voice as voice
+from playsound import playsound # needs to be version 1.2.2 1.3.x has issues
+import language_tool_python
 
 class Window():
     def __init__(self):
@@ -16,6 +17,7 @@ class Window():
         self.window.protocol("WM_DELETE_WINDOW", self.exit)
         self.voice = voice.VoiceControl()
         self.vc = False
+        self.not_in_voice = True
 
     def exit(self):
         # What happens when window is closed
@@ -58,8 +60,10 @@ class Window():
         """
         prompts the user to use voice control
         """
-        system(f"{FILEPATH}prompts/voice_control_prompt.wav")
-        response = self.voice.speech_to_text(10)
+        playsound(f'{FILEPATH}prompts/voice_control_prompt.wav', block = True)
+        # playsound(f"{FILEPATH}prompts/voice_control_prompt.wav")
+        response = self.voice.speech_to_text(4)
+        playsound(f"{FILEPATH}prompts/ding.wav")
         if "yes" in response:
             self.label3.config(text = "Voice Control Active")
             self.window.update()
@@ -73,14 +77,13 @@ class Window():
         self.password.delete(0, tk.END)
         self.user.delete(0, tk.END)
         self.window.update()
-        print("Success")
         # prompt for user and password and attempt login
-        system(f"{FILEPATH}prompts/user_prompt.wav")
+        playsound(f"{FILEPATH}prompts/user_prompt.wav")
         response = self.voice.speech_to_text(10)
+        playsound(f"{FILEPATH}prompts/ding.wav")
         response = response.split(" ")
         username = ""
         for word in response:
-            print(word)
             if word == "at":
                 word = "@"
             if word in NUMBER_WORDS_CHANGE.keys():
@@ -88,12 +91,12 @@ class Window():
             username += word
         self.user.insert(tk.END, username.strip().replace(" ", ""))
         self.window.update()
-        system(f"{FILEPATH}prompts/pass_prompt.wav")
+        playsound(f"{FILEPATH}prompts/pass_prompt.wav")
         response = self.voice.speech_to_text(15)
+        playsound(f"{FILEPATH}prompts/ding.wav")
         response = response.split(" ")
         password = ""
         for word in response:
-            print(word)
             if word == "at":
                 word = "@"
             password += word
@@ -109,8 +112,9 @@ class Window():
         if voice control is on then plays a message letting the user know that there was an issue
         """
         if self.vc:
-            system(f"{FILEPATH}prompts/bad_user_pass_prompt.wav")
-            response = self.voice.speech_to_text(10)
+            playsound(f"{FILEPATH}prompts/bad_user_pass_prompt.wav")
+            response = self.voice.speech_to_text(4)
+            playsound(f"{FILEPATH}prompts/ding.wav")
             if "yes" in response:
                 self.voice_login()
             else:
@@ -121,7 +125,7 @@ class Window():
         """
         Attempts to login to gmail server and update the view displays an error message if there was a problem
         """
-        if self.user.get() == "" or self.password.get() =="":
+        if self.user.get() == "" or self.password.get() == "":
             self.bad_login_prompt()
             self.label3.config(text = "Please enter an Username and/or Password.")
         elif self.user.get().strip()[-10:] != "@gmail.com":
@@ -131,14 +135,177 @@ class Window():
         self.mail = mailing.Mailing(self.user.get(), self.password.get())
 
         if not self.mail.try_login():
-            self.bad_login_prompt()
             self.label3.config(text = "Please enter a valid Gmail Email Address/Check to make sure you are using the correct password")
+            self.bad_login_prompt()
+            self.window.update()
         else:
             self.label3.config(text = "Success")
+            self.window.update()
             if self.vc:
-                system(f"{FILEPATH}prompts/login_success_prompt.wav")
+                playsound(f"{FILEPATH}prompts/login_success_prompt.wav")
             time.sleep(.5)
             self.email_interface()
+
+    def prompt_read_compose(self):
+        self.not_in_voice = False
+        self.email_interface()
+        self.vc = True
+        playsound(f"{FILEPATH}prompts/read_compose_prompt.wav")
+        response = self.voice.speech_to_text(5)
+        playsound(f"{FILEPATH}prompts/ding.wav")
+        if "compose" in response:
+            self.window.update()
+            self.voice_compose()
+        elif "read" in response:
+            self.window.update()
+            self.prompt_email_read()
+        elif "disable" in response:
+            self.error_label.config(text = "Voice Control Deactivated")
+            self.vc = False
+            self.not_in_voice = True
+        else:
+            playsound(f"{FILEPATH}prompts/issue_with_response_prompt.wav")
+            self.window.update()
+            self.prompt_read_compose()
+
+    def prompt_email_read(self):
+        """
+        prompts the user for what email they want to read then reads that email
+        """
+        playsound(f"{FILEPATH}prompts/which_read_prompt.wav")
+        response = self.voice.speech_to_text(5)
+        if "one" in response:
+            self.display_email(0)
+        elif "two" in response:
+            self.display_email(1)
+        elif "three" in response:
+            self.display_email(2)
+        elif "four" in response:
+            self.display_email(3)
+        elif "five" in response:
+            self.display_email(4)
+        else:
+            playsound(f"{FILEPATH}prompts/read_error_prompt.wav")
+        self.prompt_read_compose()
+
+    def voice_compose(self):
+        self.prompt_to()
+        self.prompt_subject()
+        self.prompt_body()
+
+    def prompt_to(self):
+        playsound(f"{FILEPATH}prompts/to_prompt.wav")
+        response = self.voice.speech_to_text(15)
+        playsound(f"{FILEPATH}prompts/ding.wav")
+        response = response.split(" ")
+        username = ""
+        for word in response:
+            if word == "at":
+                word = "@"
+            if word in NUMBER_WORDS_CHANGE.keys():
+                word = NUMBER_WORDS_CHANGE[word]
+            username += word
+        self.user_to.delete(0, tk.END)
+        self.user_to.insert(0, username.strip().replace(" ", ""))
+        self.window.update()
+
+    def prompt_subject(self):
+        playsound(f"{FILEPATH}prompts/subject_prompt.wav")
+        response = self.voice.speech_to_text(15)
+        playsound(f"{FILEPATH}prompts/ding.wav")
+        self.subject.delete(0, tk.END)
+        self.subject.insert(0, response)
+        self.window.update()
+
+    def prompt_body(self, replace = False):
+        if replace:
+            self.body.delete("1.0", tk.END)
+        playsound(f"{FILEPATH}prompts/body_prompt.wav")
+        response = "continue"
+        while "stop" not in response and "continue" in response:
+            self.body.insert(tk.END, self.voice.speech_to_text(15))
+            playsound(f"{FILEPATH}prompts/ding.wav")
+            response = self.voice.speech_to_text(5)
+            self.window.update()
+        
+        self.fix_grammar()
+
+        self.read_message_contents()
+
+    def fix_grammar(self):
+        """
+        Fixes grammar from speech to text.
+        """
+        # fix grammar mistakes
+        tool = language_tool_python.LanguageTool('en-US')
+
+        text = self.body.get("1.0", tk.END)
+
+        # get the matches
+        matches = tool.check(text)
+
+        my_mistakes = []
+        my_corrections = []
+        start_positions = []
+        end_positions = []
+
+        for rules in matches:
+            if len(rules.replacements) > 0:
+                start_positions.append(rules.offset)
+                end_positions.append(rules.errorLength + rules.offset)
+                my_mistakes.append(text[rules.offset : rules.errorLength + rules.offset])
+                my_corrections.append(rules.replacements[0])
+
+        my_new_text = list(text)
+
+        for m in range(len(start_positions)):
+            for i in range(len(text)):
+                my_new_text[start_positions[m]] = my_corrections[m]
+                if (i > start_positions[m] and i < end_positions[m]):
+                    my_new_text[i]=""
+
+        my_new_text = "".join(my_new_text)
+        self.body.delete("1.0", tk.END)
+        self.window.update()
+        self.body.insert("1.0", my_new_text)
+        self.window.update()
+
+    def read_message_contents(self):
+        playsound(f"{FILEPATH}prompts/check_input_prompt.wav")
+        self.voice.text_to_speech(self.user_to.get())
+        response = self.voice.speech_to_text(5)
+        while "incorrect" in response:
+            self.prompt_to()
+            playsound(f"{FILEPATH}prompts/user_to_check_prompt.wav")
+            self.voice.text_to_speech(self.user_to.get())
+            response = self.voice.speech_to_text(5)                
+        
+        playsound(f"{FILEPATH}prompts/subject_check_prompt.wav")
+        response = self.voice.speech_to_text(5)
+        self.voice.text_to_speech(self.subject.get())
+        while "incorrect" in response:
+            self.prompt_subject()
+            playsound(f"{FILEPATH}prompts/subject_check_prompt.wav")
+            self.voice.text_to_speech(self.user_to.get())
+            response = self.voice.speech_to_text(5)
+
+        playsound(f"{FILEPATH}prompts/body_check_prompt.wav")
+        self.voice.text_to_speech(self.body.get("1.0", tk.END))
+        response = self.voice.speech_to_text(5)
+        while "incorrect" in response:
+            self.prompt_body(True)
+            playsound(f"{FILEPATH}prompts/body_check_prompt.wav")
+            self.voice.text_to_speech(self.user_to.get())
+            response = self.voice.speech_to_text(5)
+
+        playsound(f"{FILEPATH}prompts/final_check_prompt.wav")
+
+        self.send_email()
+
+        if self.error_label.cget("text") == "Something went wrong check all the entry boxes.":
+            self.voice_compose()
+        else:
+            self.prompt_read_compose()
 
     def email_interface(self):
         """
@@ -157,12 +324,8 @@ class Window():
         self.body_label = tk.Label(text = "Body: ")
         self.error_label = tk.Label(text = "")
 
-
-        """TESTING PURPOSES REMOVE"""
-        self.speech_button = tk.Button(text = "Speech to Text (Body) (10 secs)", command = lambda: self.get_text_from_speech(10))
+        self.speech_button = tk.Button(text = "Voice Control", command = self.prompt_read_compose)
         self.speech_button.grid(column = 1, row = 8)
-        """TESTING PURPOSES REMOVE"""
-
 
         self.email_one = tk.Button(text = "REFRESH EMAILS", command = self.get_recieved_emails, width = 15, height = 3, background = "#3474eb")
         self.email_two = tk.Button(text = "REFRESH EMAILS", command = self.get_recieved_emails, width = 15, height = 3, background = "#3474eb")
@@ -190,12 +353,11 @@ class Window():
         self.error_label.grid(column = 2, row = 9)
 
         self.get_recieved_emails()
-        
-    def get_text_from_speech(self, length):
-        """
-        used for testing get rid of it
-        """
-        self.body.insert(tk.END, self.voice.speech_to_text(length))
+
+        self.window.update()
+
+        if self.vc and self.not_in_voice:
+            self.prompt_read_compose()
 
     def get_recieved_emails(self):
         """
@@ -247,25 +409,32 @@ class Window():
         Displays the email that the user selects
         """
         self.reset_button_colors()
-
-        self.body.delete("1.0", tk.END)
-        self.user_from.config(text = self.mail.messages[index]['from'])
-        self.user_to.delete(0, tk.END)
-        self.user_to.insert(0, self.mail.user)
-        self.subject.delete(0, tk.END)
-        self.subject.insert(0, self.mail.messages[index]['subj'])
-        self.body.insert("1.0", self.mail.messages[index]['body'])
-        self.send_email_button.config(width = 20, text = "Return to Email View", command = self.email_interface)
-        if index == 0:
-            self.email_one.config(background = "#b4c0d6")
-        elif index == 1:
-            self.email_two.config(background = "#b4c0d6")
-        elif index == 2:
-            self.email_three.config(background = "#b4c0d6")
-        elif index == 3:
-            self.email_four.config(background = "#b4c0d6")
-        elif index == 4:
-            self.email_five.config(background = "#b4c0d6")
+        if self.mail.messages_length < index:
+            playsound(f"{FILEPATH}prompts/error_read_prompt.wav")
+            self.error_label.config(text = "There is no Email.")
+        else:
+            self.body.delete("1.0", tk.END)
+            self.user_from.config(text = self.mail.messages[index]['from'])
+            self.user_to.delete(0, tk.END)
+            self.user_to.insert(0, self.mail.user)
+            self.subject.delete(0, tk.END)
+            self.subject.insert(0, self.mail.messages[index]['subj'])
+            self.body.insert("1.0", self.mail.messages[index]['body'])
+            self.send_email_button.config(width = 20, text = "Return to Email View", command = self.email_interface)
+            self.window.update()
+            if index == 0:
+                self.email_one.config(background = "#b4c0d6")
+            elif index == 1:
+                self.email_two.config(background = "#b4c0d6")
+            elif index == 2:
+                self.email_three.config(background = "#b4c0d6")
+            elif index == 3:
+                self.email_four.config(background = "#b4c0d6")
+            elif index == 4:
+                self.email_five.config(background = "#b4c0d6")
+            self.window.update()
+            if self.vc:
+                self.voice.text_to_speech(f"Now reading email from {self.mail.messages[index]['from']}, Subject, {self.mail.messages[index]['subj']}, Body, {self.mail.messages[index]['body']}")
 
     def reset_button_colors(self):
         self.email_one.config(background = "#3474eb")
@@ -280,8 +449,12 @@ class Window():
         """
         self.mail.create_message(self.user_to.get(), self.subject.get(), self.body.get("1.0", tk.END))
         if not self.mail.send_email():
+            if self.vc:
+                playsound(f"{FILEPATH}prompts/email_fail_prompt.wav")
             self.error_label.config(text = "Something went wrong check all the entry boxes.")
         else:
+            if self.vc:
+                playsound(f"{FILEPATH}prompts/email_success_prompt.wav")
             self.error_label.config(text = "Email Sent Successfully!")
             self.user_to.delete(0, tk.END)
             self.subject.delete(0, tk.END)
