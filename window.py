@@ -1,7 +1,7 @@
 import tkinter as tk
-import math
 from constants import FILEPATH, NUMBER_WORDS_CHANGE
 import mailing.mailing as mailing
+import database.database as db
 import time
 import voice.voice as voice
 from playsound import playsound # needs to be version 1.2.2 1.3.x has issues
@@ -15,6 +15,7 @@ class Window():
         self.window.state('zoomed')
         self.window.geometry("1000x500")
         self.window.protocol("WM_DELETE_WINDOW", self.exit)
+        self.window.configure(bg = "#34ebb1")
         self.voice = voice.VoiceControl()
         self.vc = False
         self.not_in_voice = True
@@ -35,14 +36,14 @@ class Window():
         self.loginbutton = tk.Button(text = "Login", background = "#259c45", activebackground = "#2621ad", font = 3, width = 10, height = 1, command = self.login)
         self.voice_control_button = tk.Button(text = "Voice Control", font = 3, width = 10, height = 1, command = self.prompt_voice_control)
         self.user = tk.Entry()
-        self.label1 = tk.Label(text = "Username: ")
+        self.label1 = tk.Label(text = "Username: ", bg = "#34ebb1")
 
         self.password = tk.Entry()
 
-        self.label4 = tk.Label(text = "Application Password: ")
-        self.label5 = tk.Label(text = "Here is a link to find the application password: https://support.google.com/mail/answer/185833?hl=en")
+        self.label4 = tk.Label(text = "Application Password: ", bg = "#34ebb1")
+        self.label5 = tk.Label(text = "Here is a link to find the application password: https://support.google.com/mail/answer/185833?hl=en", bg = "#34ebb1")
 
-        self.label3 = tk.Label(text = "")
+        self.label3 = tk.Label(text = "", bg = "#34ebb1")
 
         # Pack the buttons, labels and entries to the screen
         self.label1.grid(row = 1, column = 1, padx = 10, pady = 10)
@@ -60,8 +61,9 @@ class Window():
         """
         prompts the user to use voice control
         """
-        playsound(f'{FILEPATH}prompts/voice_control_prompt.wav', block = True)
+        playsound(f'{FILEPATH}prompts/voice_control_prompt1.wav', block = True)
         # playsound(f"{FILEPATH}prompts/voice_control_prompt.wav")
+        playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
         response = self.voice.speech_to_text(4)
         playsound(f"{FILEPATH}prompts/ding.wav")
         if "yes" in response:
@@ -79,6 +81,7 @@ class Window():
         self.window.update()
         # prompt for user and password and attempt login
         playsound(f"{FILEPATH}prompts/user_prompt.wav")
+        playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
         response = self.voice.speech_to_text(10)
         playsound(f"{FILEPATH}prompts/ding.wav")
         response = response.split(" ")
@@ -92,6 +95,7 @@ class Window():
         self.user.insert(tk.END, username.strip().replace(" ", ""))
         self.window.update()
         playsound(f"{FILEPATH}prompts/pass_prompt.wav")
+        playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
         response = self.voice.speech_to_text(15)
         playsound(f"{FILEPATH}prompts/ding.wav")
         response = response.split(" ")
@@ -113,6 +117,7 @@ class Window():
         """
         if self.vc:
             playsound(f"{FILEPATH}prompts/bad_user_pass_prompt.wav")
+            playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
             response = self.voice.speech_to_text(4)
             playsound(f"{FILEPATH}prompts/ding.wav")
             if "yes" in response:
@@ -140,6 +145,11 @@ class Window():
             self.window.update()
         else:
             self.label3.config(text = "Success")
+            try:
+                self.db = db.DB_query(self.user.get().lower())
+            except:
+                self.label3.config(text = "MongoDB issue Connecting")
+                time.sleep(.5)
             self.window.update()
             if self.vc:
                 playsound(f"{FILEPATH}prompts/login_success_prompt.wav")
@@ -151,6 +161,7 @@ class Window():
         self.email_interface()
         self.vc = True
         playsound(f"{FILEPATH}prompts/read_compose_prompt.wav")
+        playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
         response = self.voice.speech_to_text(5)
         playsound(f"{FILEPATH}prompts/ding.wav")
         if "compose" in response:
@@ -173,6 +184,7 @@ class Window():
         prompts the user for what email they want to read then reads that email
         """
         playsound(f"{FILEPATH}prompts/which_read_prompt.wav")
+        playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
         response = self.voice.speech_to_text(5)
         if "one" in response:
             self.display_email(0)
@@ -195,22 +207,24 @@ class Window():
 
     def prompt_to(self):
         playsound(f"{FILEPATH}prompts/to_prompt.wav")
+        playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
         response = self.voice.speech_to_text(15)
         playsound(f"{FILEPATH}prompts/ding.wav")
         response = response.split(" ")
         username = ""
         for word in response:
-            if word == "at":
+            if word.lower() == "at":
                 word = "@"
-            if word in NUMBER_WORDS_CHANGE.keys():
+            if word.lower() in NUMBER_WORDS_CHANGE.keys():
                 word = NUMBER_WORDS_CHANGE[word]
             username += word
         self.user_to.delete(0, tk.END)
-        self.user_to.insert(0, username.strip().replace(" ", ""))
+        self.user_to.insert(0, username.strip().replace(" ", "").lower())
         self.window.update()
 
     def prompt_subject(self):
         playsound(f"{FILEPATH}prompts/subject_prompt.wav")
+        playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
         response = self.voice.speech_to_text(15)
         playsound(f"{FILEPATH}prompts/ding.wav")
         self.subject.delete(0, tk.END)
@@ -223,6 +237,7 @@ class Window():
         playsound(f"{FILEPATH}prompts/body_prompt.wav")
         response = "continue"
         while "stop" not in response and "continue" in response:
+            playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
             self.body.insert(tk.END, self.voice.speech_to_text(15))
             playsound(f"{FILEPATH}prompts/ding.wav")
             response = self.voice.speech_to_text(5)
@@ -278,24 +293,29 @@ class Window():
             self.prompt_to()
             playsound(f"{FILEPATH}prompts/user_to_check_prompt.wav")
             self.voice.text_to_speech(self.user_to.get())
+            playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
             response = self.voice.speech_to_text(5)                
         
         playsound(f"{FILEPATH}prompts/subject_check_prompt.wav")
-        response = self.voice.speech_to_text(5)
         self.voice.text_to_speech(self.subject.get())
+        playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
+        response = self.voice.speech_to_text(5)
         while "incorrect" in response:
             self.prompt_subject()
             playsound(f"{FILEPATH}prompts/subject_check_prompt.wav")
             self.voice.text_to_speech(self.user_to.get())
+            playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
             response = self.voice.speech_to_text(5)
 
         playsound(f"{FILEPATH}prompts/body_check_prompt.wav")
         self.voice.text_to_speech(self.body.get("1.0", tk.END))
+        playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
         response = self.voice.speech_to_text(5)
         while "incorrect" in response:
             self.prompt_body(True)
             playsound(f"{FILEPATH}prompts/body_check_prompt.wav")
             self.voice.text_to_speech(self.user_to.get())
+            playsound(f"{FILEPATH}prompts/beginspeakingprompt.wav")
             response = self.voice.speech_to_text(5)
 
         playsound(f"{FILEPATH}prompts/final_check_prompt.wav")
@@ -307,39 +327,107 @@ class Window():
         else:
             self.prompt_read_compose()
 
+    def save_as_draft(self):
+        try:
+            self.db.save_draft(self.user_to.get().lower().strip(), self.subject.get().strip(), self.body.get("1.0", tk.END))
+            self.user_to.delete(0, tk.END)
+            self.subject.delete(0, tk.END)
+            self.body.delete("1.0", tk.END)
+        except:
+            self.error_label.config(text = "Error saving Draft")
+    
+    def open_draft(self):
+        subj = self.clicked2.get()
+        for draft in self.drafts:
+            if subj == draft[1]:
+                self.user_to.delete(0, tk.END)
+                self.subject.delete(0, tk.END)
+                self.body.delete("1.0", tk.END)
+                self.user_to.insert(0, draft[0])
+                self.subject.insert(0, draft[1])
+                self.body.insert("1.0", draft[2])
+                break
+
     def email_interface(self):
         """
         draws the email interface after a successful login
         """
         self.clear_window()
 
-        self.send_email_button = tk.Button(text = "Send Email", background = "#259c45", activebackground = "#2621ad", font = 3, width = 10, height = 1, command = self.send_email)
+        self.send_email_button = tk.Button(text = "Send Email", background = "#259c45", activebackground = "#2621ad", font = 3, width = 30, height = 5, command = self.send_email)
         self.user_from = tk.Label(text = self.mail.user)
-        self.user_from_label = tk.Label(text = "From: ")
+        self.user_from_label = tk.Label(text = "From: ", bg = "#34ebb1")
         self.user_to = tk.Entry()
-        self.user_to_label = tk.Label(text = "To: ")
+        self.user_to_label = tk.Label(text = "To: ", bg = "#34ebb1")
         self.subject = tk.Entry()
-        self.subject_label = tk.Label(text = "Subject: ")
+        self.subject_label = tk.Label(text = "Subject: ", bg = "#34ebb1")
         self.body = tk.Text(width = 100, height = 10, border = 10, font = "Calibri")
-        self.body_label = tk.Label(text = "Body: ")
-        self.error_label = tk.Label(text = "")
+        self.body_label = tk.Label(text = "Body: ", bg = "#34ebb1")
+        self.error_label = tk.Label(text = "", bg = "#34ebb1")
+
+
+        self.draft_frame = tk.Frame(bg = "#34ebb1")
+        self.save_draft = tk.Button(self.draft_frame, text = "Save as Draft", command = self.save_as_draft, width = 10, height = 2, background = "#3474eb")
+        self.open_drafts = tk.Button(self.draft_frame, text = "Open a Draft", command = self.open_draft, width = 10, height = 2, background = "#3474eb")
+        self.clicked2 = tk.StringVar()
+        self.clicked2.set("")
+        try:
+            self.drafts = self.db.get_drafts()
+            draft_names = [""]
+            for item in self.drafts:
+                draft_names.append(item[1])
+        except:
+            draft_names = [""]
+            self.error_label.config(text = "Database Error")
+        self.draft = tk.OptionMenu(self.draft_frame, self.clicked2, *draft_names)
+        self.drafts_label = tk.Label(self.draft_frame, text = "Drop Down Menu for Drafts", bg = "#34ebb1")
+        self.drafts_label.grid(column = 2, row = 1, pady = 10, padx = 10)
+        self.draft.grid(column = 2, row = 2, pady = 10, padx = 10)
+        self.open_drafts.grid(column = 3, row = 1, rowspan = 2, pady = 10, padx = 10)
+        self.save_draft.grid(column = 1, row = 1, rowspan = 2, pady = 10, padx = 10)
+
+        self.draft_frame.grid(column = 4, row = 3)
+
+
+        self.contact_frame = tk.Frame(bg = "#34ebb1")
+        self.contact_frame.grid(column = 4, row = 2)
+        self.clicked1 = tk.StringVar()
+        self.clicked1.set("")
+        try:
+            contacts = self.db.get_addresses()
+        except:
+            contacts = [""]
+            self.error_label.config(text = "Database Error")
+        self.contacts = tk.OptionMenu(self.contact_frame, self.clicked1, *contacts)
+        self.contacts_label = tk.Label(self.contact_frame, text = "Drop Down Menu for Contacts", bg = "#34ebb1")
+        self.contacts_label.grid(column = 1, row = 1, pady = 10, padx = 10)
+        self.contacts.grid(column = 1, row = 2, pady = 10, padx = 10)
+
+        self.add_to_contacts_button = tk.Button(self.contact_frame, text = "Add to Contacts", command = self.add_contact, background = "#3474eb")
+        self.add_to_contacts_button.grid(column = 2, row = 2, pady = 10, padx = 10)
 
         self.speech_button = tk.Button(text = "Voice Control", command = self.prompt_read_compose)
         self.speech_button.grid(column = 1, row = 8)
 
-        self.email_one = tk.Button(text = "REFRESH EMAILS", command = self.get_recieved_emails, width = 15, height = 3, background = "#3474eb")
-        self.email_two = tk.Button(text = "REFRESH EMAILS", command = self.get_recieved_emails, width = 15, height = 3, background = "#3474eb")
-        self.email_three = tk.Button(text = "REFRESH EMAILS", command = self.get_recieved_emails, width = 15, height = 3, background = "#3474eb")
-        self.email_four = tk.Button(text = "REFRESH EMAILS", command = self.get_recieved_emails, width = 15, height = 3, background = "#3474eb")
-        self.email_five = tk.Button(text = "REFRESH EMAILS", command = self.get_recieved_emails, width = 15, height = 3, background = "#3474eb")
-        self.refresh_inbox = tk.Button(text = "Refresh Inbox", command = self.get_recieved_emails, width = 15, height = 3, background = "#3474eb")
+        self.inbox = tk.Frame(bg = "#767a79", height = 24, width = 30)
+        self.inbox_label = tk.Label(self.inbox, text = "Inbox", bg = "#767a79", font = ("Calibri", 20))
 
+        self.email_one = tk.Button(self.inbox, text = "REFRESH EMAILS", command = self.get_recieved_emails, width = 25, height = 3, background = "#3474eb")
+        self.email_two = tk.Button(self.inbox,text = "REFRESH EMAILS", command = self.get_recieved_emails, width = 25, height = 3, background = "#3474eb")
+        self.email_three = tk.Button(self.inbox,text = "REFRESH EMAILS", command = self.get_recieved_emails, width = 25, height = 3, background = "#3474eb")
+        self.email_four = tk.Button(self.inbox,text = "REFRESH EMAILS", command = self.get_recieved_emails, width = 25, height = 3, background = "#3474eb")
+        self.email_five = tk.Button(self.inbox,text = "REFRESH EMAILS", command = self.get_recieved_emails, width = 25, height = 3, background = "#3474eb")
+        self.refresh_inbox = tk.Button(self.inbox,text = "Refresh Inbox", command = self.get_recieved_emails, width = 15, height = 3, background = "#3474eb")
+
+        self.inbox_label.grid(column = 1, row = 1)
         self.email_one.grid(column = 1, row = 2, pady = 10, padx = 10)
         self.email_two.grid(column = 1, row = 3, pady = 10, padx = 10)
         self.email_three.grid(column = 1, row = 4, pady = 10, padx = 10)
         self.email_four.grid(column = 1, row = 5, pady = 10, padx = 10)
         self.email_five.grid(column = 1, row = 6, pady = 10, padx = 10)
         self.refresh_inbox.grid(column = 1, row = 7)
+
+        self.inbox.grid(column = 1, row = 2, rowspan = 6, padx = 10, pady = 10)
 
         self.send_email_button.grid(row = 1, column = 1, padx = 10, pady = 10)
         self.user_from.grid(column = 3, row = 1, padx = 1, pady = 2)
@@ -358,6 +446,15 @@ class Window():
 
         if self.vc and self.not_in_voice:
             self.prompt_read_compose()
+
+    def add_contact(self):
+        user = self.user_to.get().lower()
+        if user == "":
+            self.error_label.config(text = "Error Adding to Addressbook")
+        elif self.db.add_to_address_book(user):
+            self.error_label.config(text = "Added to AddressBook")
+        else:
+            self.error_label.config(text = "Error Adding to Addressbook")
 
     def get_recieved_emails(self):
         """
@@ -447,7 +544,10 @@ class Window():
         """
         attempts to send the email displays an error if it cannot
         """
-        self.mail.create_message(self.user_to.get(), self.subject.get(), self.body.get("1.0", tk.END))
+        if self.user_to.get() == "" and self.clicked1.get() != "":
+            self.mail.create_message(self.clicked1.get(), self.subject.get(), self.body.get("1.0", tk.END))
+        else:
+            self.mail.create_message(self.user_to.get(), self.subject.get(), self.body.get("1.0", tk.END))
         if not self.mail.send_email():
             if self.vc:
                 playsound(f"{FILEPATH}prompts/email_fail_prompt.wav")
