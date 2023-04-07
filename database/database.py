@@ -2,7 +2,7 @@ import pymongo
 
 class DB_query():
     def __init__(self, username):
-        self.client = pymongo.MongoClient(f"mongodb+srv://seniorproject1:r8CKsLG3u5UQwTuZ@cluster0.iepaj31.mongodb.net/?retryWrites=true&w=majority")
+        self.client = pymongo.MongoClient(f"mongodb+srv://{username}:{password}@{cluster}.mongodb.net/?retryWrites=true&w=majority")
         self.username = username
 
     def get_addresses(self):
